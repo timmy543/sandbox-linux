@@ -1,0 +1,113 @@
+name: Build RPM & publish dnf repo
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # kvuli vytvoreni Release u tagu
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: fedora:42     # stejna generace jako Nobara; zmen podle `cat /etc/fedora-release`
+    steps:
+      - name: Instalace build nastroju
+        run: |
+          dnf -y install --setopt=install_weak_deps=False \
+            rpm-build rpmdevtools desktop-file-utils libappstream-glib \
+            libappstream-glib-builder createrepo_c tar gzip git
+
+      - uses: actions/checkout@v4
+
+      - name: Build RPM
+        run: |
+          chmod +x packaging/build-rpm.sh
+          ./packaging/build-rpm.sh
+
+      - name: Posbirat balicky
+        run: |
+          mkdir -p site/rpm
+          find ~/rpmbuild/RPMS -name '*.rpm' -exec cp {} site/rpm/ \;
+          ls -l site/rpm
+
+      # createrepo_c => dnf umi balicky najit a nainstalovat.
+      - name: dnf metadata
+        run: createrepo_c site/rpm
+
+      # AppStream katalog => aplikace se ukaze i v Discoveru (grafickem spravci).
+      # Bez tohohle kroku funguje jen `dnf install` z prikazove radky.
+      - name: AppStream katalog
+        run: |
+          appstream-builder \
+            --packages-dir=site/rpm \
+            --temp-dir=$(mktemp -d) \
+            --output-dir=appstream \
+            --origin=notes-sandbox \
+            --basename=notes-sandbox \
+            --include-failed \
+            --min-icon-size=32
+          # Vlozi katalog do repodata jako typ 'appstream'.
+          modifyrepo_c --mdtype=appstream \
+            appstream/notes-sandbox.xml.gz site/rpm/repodata/
+          if [ -f appstream/notes-sandbox-icons.tar.gz ]; then
+            modifyrepo_c --mdtype=appstream-icons \
+              appstream/notes-sandbox-icons.tar.gz site/rpm/repodata/
+          fi
+
+      - name: Uvodni stranka
+        run: |
+          cp packaging/notes-sandbox.repo site/
+          cat > site/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>notes-sandbox</title>
+          <h1>notes-sandbox — dnf repo</h1>
+          <pre>sudo dnf config-manager --add-repo https://timmy543.github.io/sandbox-linux/notes-sandbox.repo
+          sudo dnf install notes-sandbox</pre>
+          <p><a href="notes-sandbox.repo">notes-sandbox.repo</a> &middot; <a href="rpm/">balíčky</a></p>
+          HTML
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: site
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: site/rpm/*.rpm

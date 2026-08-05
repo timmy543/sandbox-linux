@@ -1,0 +1,11 @@
+# Zkopiruj do /etc/yum.repos.d/notes-sandbox.repo
+# (nebo:  sudo dnf config-manager --add-repo https://timmy543.github.io/sandbox-linux/notes-sandbox.repo)
+
+[notes-sandbox]
+name=Notes Sandbox (timmy543)
+baseurl=https://timmy543.github.io/sandbox-linux/rpm/
+enabled=1
+repo_gpgcheck=0
+gpgcheck=0
+metadata_expire=300
+skip_if_unavailable=True

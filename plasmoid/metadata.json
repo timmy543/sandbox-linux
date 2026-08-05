@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "io.github.timmy543.notes",
+        "Name": "Notes",
+        "Name[cs]": "Poznámky",
+        "Description": "Sticky notes on your desktop",
+        "Description[cs]": "Poznámky přímo na ploše",
+        "Icon": "accessories-text-editor",
+        "Category": "Utilities",
+        "License": "MIT",
+        "Version": "0.1.0",
+        "Website": "https://github.com/timmy543/sandbox-linux",
+        "Authors": [
+            {
+                "Name": "Jan Zeman",
+                "Email": "Pepa.MCL@seznam.cz"
+            }
+        ]
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

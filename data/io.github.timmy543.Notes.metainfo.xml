@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.timmy543.Notes</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <name>Notes</name>
+  <name xml:lang="cs">Poznámky</name>
+  <summary>Simple note taking application</summary>
+  <summary xml:lang="cs">Jednoduchá aplikace na poznámky</summary>
+
+  <description>
+    <p>A minimal Qt6 note taking application with autosave.</p>
+    <p xml:lang="cs">Minimalistická aplikace na poznámky v Qt6 s automatickým ukládáním.</p>
+  </description>
+
+  <launchable type="desktop-id">io.github.timmy543.Notes.desktop</launchable>
+  <url type="homepage">https://github.com/timmy543/sandbox-linux</url>
+  <url type="bugtracker">https://github.com/timmy543/sandbox-linux/issues</url>
+
+  <developer id="io.github.timmy543">
+    <name>Jan Zeman</name>
+  </developer>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="0.1.0" date="2026-08-05">
+      <description>
+        <p>First release.</p>
+      </description>
+    </release>
+  </releases>
+</component>

@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Notes
+Name[cs]=Poznámky
+GenericName=Note taking
+GenericName[cs]=Poznámkový blok
+Comment=Simple note taking application
+Comment[cs]=Jednoduchá aplikace na poznámky
+Exec=notes-sandbox
+Icon=io.github.timmy543.Notes
+Terminal=false
+Categories=Utility;TextEditor;Qt;
+Keywords=notes;poznamky;text;
+StartupNotify=true
+StartupWMClass=notes-sandbox
