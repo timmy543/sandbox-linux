@@ -76,7 +76,7 @@ Workflow po každém pushi do `main`:
 Na Nobaře pak stačí:
 
 ```bash
-sudo dnf config-manager --add-repo https://timmy543.github.io/sandbox-linux/notes-sandbox.repo
+sudo dnf config-manager addrepo https://timmy543.github.io/sandbox-linux/notes-sandbox.repo
 sudo dnf install notes-sandbox
 ```
 

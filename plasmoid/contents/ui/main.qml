@@ -120,17 +120,17 @@ PlasmoidItem {
         });
     }
 
-    function saveNow() {
+    function saveNow(noteId, noteTitle, noteBody, keepId) {
         saveTimer.stop();
-        if (!currentNote) {
+        if (!noteId && !currentNote) {
             return;
         }
         const payload = {
-            id: currentNote.id,
-            title: currentNote.title,
-            body: editor.text
+            id: noteId || currentNote.id,
+            title: noteTitle !== undefined ? noteTitle : (currentNote ? currentNote.title : ""),
+            body: noteBody !== undefined ? noteBody : editor.text
         };
-        const keepId = currentNote.id;
+        const preserve = keepId !== undefined ? keepId : (currentNote ? currentNote.id : payload.id);
         executable.run(helper + " save " + Qt.btoa(JSON.stringify(payload)), function (code, out) {
             if (code === 0) {
                 // Neprekreslujeme editor - uzivatel muze mezitim psat dal.
@@ -140,7 +140,7 @@ PlasmoidItem {
                     return;
                 }
                 for (let i = 0; i < notes.length; ++i) {
-                    if (notes[i].id === keepId) {
+                    if (notes[i].id === preserve) {
                         currentIndex = i;
                         break;
                     }
@@ -164,12 +164,18 @@ PlasmoidItem {
         if (notes.length === 0) {
             return;
         }
-        saveNow();
+        const oldNote = currentNote;
+        const oldBody = editor.text;
+        saveTimer.stop();
+        const nextIndex = (currentIndex + delta + notes.length) % notes.length;
+        currentIndex = nextIndex;
         populating = true;
-        currentIndex = (currentIndex + delta + notes.length) % notes.length;
         editor.text = currentNote ? currentNote.body : "";
         populating = false;
         rememberCurrent();
+        if (oldNote) {
+            saveNow(oldNote.id, oldNote.title, oldBody, currentNote ? currentNote.id : oldNote.id);
+        }
     }
 
     function rememberCurrent() {
