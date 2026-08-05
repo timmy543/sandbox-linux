@@ -72,6 +72,25 @@ jobs:
               appstream/notes-sandbox-icons.tar.gz site/rpm/repodata/
           fi
 
+      # Prazdny katalog = aplikace se neukaze v Discoveru. Radeji hlasit hned,
+      # nez to zjistovat az stahovanim metadat z Pages.
+      - name: Kontrola AppStream katalogu
+        run: |
+          echo "--- zarazeno do katalogu ---"
+          zcat appstream/notes-sandbox.xml.gz | grep -c '<component' || true
+          zcat appstream/notes-sandbox.xml.gz | grep -o '<id>[^<]*</id>' || true
+
+          if [ -s appstream/notes-sandbox-failed.xml.gz ] && \
+             zcat appstream/notes-sandbox-failed.xml.gz | grep -q '<component'; then
+            echo "--- ODMITNUTO (i s duvodem) ---"
+            zcat appstream/notes-sandbox-failed.xml.gz
+          fi
+
+          if ! zcat appstream/notes-sandbox.xml.gz | grep -q '<component'; then
+            echo "::error::AppStream katalog je prazdny - Discover aplikaci neukaze"
+            exit 1
+          fi
+
       - name: Uvodni stranka
         run: |
           cp packaging/notes-sandbox.repo site/

@@ -16,6 +16,8 @@ BuildArch:      noarch
 BuildRequires:  python3-devel
 BuildRequires:  desktop-file-utils
 BuildRequires:  libappstream-glib
+# rsvg-convert: AppStream katalog vyzaduje rastrove ikony, samotne SVG nestaci.
+BuildRequires:  librsvg2-tools
 
 Requires:       python3
 Requires:       python3-pyside6
@@ -68,6 +70,15 @@ chmod 0755 %{buildroot}%{_bindir}/%{name} %{buildroot}%{_bindir}/%{name}-store
 # 3) Integrace do desktopu
 install -Dpm 0644 data/%{appid}.desktop   %{buildroot}%{_datadir}/applications/%{appid}.desktop
 install -Dpm 0644 data/%{appid}.svg       %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/%{appid}.svg
+
+# PNG varianty - bez nich appstream-builder aplikaci zaradi mezi 'failed'
+# a v Discoveru se neobjevi. Plasma sama by si vystacila se SVG.
+for size in 48 64 128; do
+    install -d %{buildroot}%{_datadir}/icons/hicolor/${size}x${size}/apps
+    rsvg-convert -w ${size} -h ${size} \
+        -o %{buildroot}%{_datadir}/icons/hicolor/${size}x${size}/apps/%{appid}.png \
+        data/%{appid}.svg
+done
 install -Dpm 0644 data/%{appid}.metainfo.xml %{buildroot}%{_metainfodir}/%{appid}.metainfo.xml
 
 # 4) Plasma widget
@@ -87,6 +98,7 @@ appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/%{appid}.metai
 %{python3_sitelib}/%{srcname}/
 %{_datadir}/applications/%{appid}.desktop
 %{_datadir}/icons/hicolor/scalable/apps/%{appid}.svg
+%{_datadir}/icons/hicolor/*/apps/%{appid}.png
 %{_metainfodir}/%{appid}.metainfo.xml
 
 %files plasmoid
