@@ -20,13 +20,22 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora:42     # stejna generace jako Nobara; zmen podle `cat /etc/fedora-release`
     steps:
-      - name: Instalace build nastroju
-        run: |
-          dnf -y install --setopt=install_weak_deps=False \
-            rpm-build rpmdevtools desktop-file-utils libappstream-glib \
-            libappstream-glib-builder createrepo_c tar gzip git
+      # Minimum, aby fungoval checkout.
+      - name: Zakladni nastroje
+        run: dnf -y install --setopt=install_weak_deps=False git tar gzip
 
       - uses: actions/checkout@v4
+
+      - name: Build nastroje
+        run: |
+          dnf -y install --setopt=install_weak_deps=False \
+            rpm-build rpmdevtools createrepo_c libappstream-glib-builder
+          # Plugin 'builddep' se lisi nazvem podle generace dnf.
+          dnf -y install dnf5-plugins || dnf -y install 'dnf-command(builddep)'
+
+      # Cte BuildRequires primo ze specu, takze se seznam nemuze rozejit.
+      - name: Build zavislosti ze specu
+        run: dnf -y builddep --setopt=install_weak_deps=False packaging/notes-sandbox.spec
 
       - name: Build RPM
         run: |
