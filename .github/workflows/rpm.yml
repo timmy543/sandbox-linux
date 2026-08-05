@@ -18,10 +18,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Nobara 43 = Fedora 43. Overit na cilovem stroji: cat /etc/fedora-release
+    # Nobara 44 = Fedora 44. Overit na cilovem stroji: grep VERSION_ID /etc/os-release
+    # (Nobara nema /etc/fedora-release.)
     # Diky verzove nezavisle ceste v specu (viz %{appdir}) neni shoda kriticka,
     # ale drzet se cile je porad lepsi kvuli zavislostem.
-    container: fedora:43
+    container: fedora:44
     steps:
       # Minimum, aby fungoval checkout.
       - name: Zakladni nastroje
