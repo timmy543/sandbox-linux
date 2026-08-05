@@ -21,7 +21,15 @@ mkdir -p "${STAGE}/${NAME}-${VERSION}"
 cp -r src data plasmoid README.md LICENSE "${STAGE}/${NAME}-${VERSION}/"
 tar -czf "${TOPDIR}/SOURCES/${NAME}-${VERSION}.tar.gz" -C "${STAGE}" "${NAME}-${VERSION}"
 
-rpmbuild -ba "packaging/${NAME}.spec"
+# REL_SUFFIX nastavuje CI (napr. ".42") aby kazdy build mel vyssi NEVR nez
+# predchozi. Lokalne se necha prazdny a Release zustane "1".
+RPMBUILD_ARGS=()
+if [[ -n "${REL_SUFFIX:-}" ]]; then
+    echo ">> release suffix: ${REL_SUFFIX}"
+    RPMBUILD_ARGS+=(--define "rel_suffix ${REL_SUFFIX}")
+fi
+
+rpmbuild -ba "${RPMBUILD_ARGS[@]}" "packaging/${NAME}.spec"
 
 echo
 echo ">> Hotovo:"

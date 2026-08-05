@@ -13,7 +13,10 @@
 
 Name:           notes-sandbox
 Version:        0.1.0
-Release:        1%{?dist}
+# rel_suffix dodava CI (cislo behu workflow), aby kazdy build z main mel vyssi
+# NEVR nez ten predchozi - jinak dnf upgrade hlasi "Neni co delat" i kdyz je
+# v repu cerstve postaveny balicek. Lokalni build bez definice zustava na "1".
+Release:        1%{?rel_suffix}%{?dist}
 Summary:        Jednoducha aplikace na poznamky pro KDE Plasma
 
 License:        MIT
