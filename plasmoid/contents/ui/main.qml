@@ -40,6 +40,23 @@ PlasmoidItem {
     readonly property string editorBody: editorItem ? editorItem.text : lastBody
     property string lastBody: ""
 
+    // Totez pro nazev poznamky (stejny scope problem jako u editorItem).
+    property Item titleItem: null
+    readonly property string editorTitle: titleItem ? titleItem.text : lastTitle
+    property string lastTitle: ""
+
+    // Ma uzivatel neco rozepsaneho oproti tomu, co je ulozene? Pouziva se na
+    // trech mistech (refresh, listovani, nova poznamka) - musi zahrnovat nazev
+    // i telo, jinak by se zmena nazvu bud ztratila, nebo prepsala cizi zapis.
+    readonly property bool dirty: currentNote
+        ? (editorBody !== currentNote.body || editorTitle !== currentNote.title)
+        : false
+
+    // Pocet zapisu, ktere uz odesly helperu a jeste se nevratily. Refresh se po
+    // tu dobu musi drzet zpatky - jinak by nacetl stav souboru z doby PRED
+    // zapisem a vratil uzivateli text, ktery prave napsal.
+    property int savesInFlight: 0
+
     readonly property var currentNote:
         (currentIndex >= 0 && currentIndex < notes.length) ? notes[currentIndex] : null
 
@@ -82,12 +99,26 @@ PlasmoidItem {
     // nemusi existovat (sbaleny widget) - hodnotu si pak drzi lastBody a
     // TextArea si ji vyzvedne pri svem vzniku.
     function setEditorText(text) {
+        lastBody = text;
+        if (!editorItem || editorItem.text === text) {
+            // Stejny obsah = nesahat na TextArea. Prirazeni by uzivateli
+            // preskocilo kurzor na konec, i kdyz se realne nic nemeni.
+            return;
+        }
         const before = populating;
         populating = true;
-        lastBody = text;
-        if (editorItem) {
-            editorItem.text = text;
+        editorItem.text = text;
+        populating = before;
+    }
+
+    function setTitleText(text) {
+        lastTitle = text;
+        if (!titleItem || titleItem.text === text) {
+            return;
         }
+        const before = populating;
+        populating = true;
+        titleItem.text = text;
         populating = before;
     }
 
@@ -119,6 +150,7 @@ PlasmoidItem {
         }
         currentIndex = notes.length > 0 ? target : -1;
         setEditorText(currentNote ? currentNote.body : "");
+        setTitleText(currentNote ? currentNote.title : "");
         pendingSelection = currentNote ? currentNote.id : "";
         populating = false;
     }
@@ -130,6 +162,12 @@ PlasmoidItem {
     }
 
     function newNote() {
+        // Rozepsany text nesmi spadnout pod stul: saveTimer.stop() by ho zahodil,
+        // kdyz uzivatel klikne na "nova" driv, nez debounce (1 s) dobehne.
+        // Helper dela read-modify-write, takze soubezny save a "new" si nevadi.
+        if (dirty) {
+            saveNow();
+        }
         saveTimer.stop();
         executable.run(helper + " new", function (code, out) {
             if (code !== 0) {
@@ -144,7 +182,12 @@ PlasmoidItem {
             }
             applyResult(code, out, created.note ? created.note.id : undefined);
             rememberCurrent();
-            if (editorItem) {
+            // Focus na nazev, ne na telo - stejne jako v desktopove aplikaci je
+            // prvni krok u nove poznamky pojmenovat ji.
+            if (titleItem) {
+                titleItem.forceActiveFocus();
+                titleItem.selectAll();
+            } else if (editorItem) {
                 editorItem.forceActiveFocus();
             }
         });
@@ -157,13 +200,15 @@ PlasmoidItem {
         }
         const payload = {
             id: noteId || currentNote.id,
-            title: noteTitle !== undefined ? noteTitle : (currentNote ? currentNote.title : ""),
+            title: noteTitle !== undefined ? noteTitle : editorTitle,
             body: noteBody !== undefined ? noteBody : editorBody
         };
         pendingSelection = keepId !== undefined
                            ? keepId
                            : (currentNote ? currentNote.id : payload.id);
+        savesInFlight++;
         executable.run(helper + " save " + Qt.btoa(JSON.stringify(payload)), function (code, out) {
+            savesInFlight = Math.max(0, savesInFlight - 1);
             if (code === 0) {
                 // Neprekreslujeme editor - uzivatel muze mezitim psat dal.
                 let fresh;
@@ -208,14 +253,23 @@ PlasmoidItem {
         }
         const oldNote = currentNote;
         const oldBody = editorBody;
+        const oldTitle = editorTitle;
+        const wasDirty = dirty;
         saveTimer.stop();
         const nextIndex = (currentIndex + delta + notes.length) % notes.length;
         currentIndex = nextIndex;
         setEditorText(currentNote ? currentNote.body : "");
+        setTitleText(currentNote ? currentNote.title : "");
         pendingSelection = currentNote ? currentNote.id : "";
         rememberCurrent();
-        if (oldNote) {
-            saveNow(oldNote.id, oldNote.title, oldBody, currentNote ? currentNote.id : oldNote.id);
+
+        // Ulozit JEN kdyz uzivatel opravdu psal. Pouhe prolistovani nesmi nic
+        // zapisovat: widget ma data az 10 s stara (viz refresh timer nize), takze
+        // bezduvodny zapis by prepsal to, co mezitim ulozila desktopova aplikace.
+        // Zaroven tim odpada round-trip pri kazdem prepnuti, ktery drive rozhazoval
+        // cislovani "x/y".
+        if (oldNote && wasDirty) {
+            saveNow(oldNote.id, oldTitle, oldBody, currentNote ? currentNote.id : oldNote.id);
         }
     }
 
@@ -225,21 +279,29 @@ PlasmoidItem {
 
     Timer {
         id: saveTimer
-        interval: 800
+        interval: 1000
         onTriggered: root.saveNow()
     }
 
     // Zachyti zmeny provedene v desktopove aplikaci. Pri psani se neprovadi,
     // aby uzivateli nepodrazila rozepsany text.
     Timer {
-        interval: 15000
+        interval: 10000
         running: true
         repeat: true
         onTriggered: {
-            const typing = root.editorItem ? root.editorItem.activeFocus : false;
-            if (!typing && !saveTimer.running) {
-                root.load();
+            // Rozdelany zapis (ceka na debounce nebo uz bezi) - pockat na dalsi kolo,
+            // jinak by nam soubor vratil stav z doby pred nim.
+            if (saveTimer.running || root.savesInFlight > 0) {
+                return;
             }
+            // Neulozene zmeny v editoru. Drive se tu testoval activeFocus, jenze
+            // ten muze na plose zustat drzeny i kdyz uzivatel pracuje v aplikaci,
+            // a refresh se pak nespustil vubec. Rozhoduje skutecny stav textu.
+            if (root.dirty) {
+                return;
+            }
+            root.load();
         }
     }
 
@@ -260,13 +322,47 @@ PlasmoidItem {
                 PlasmaComponents.ToolTip.visible: hovered
             }
 
-            PlasmaComponents.Label {
+            // Nazev je editovatelny primo tady, aby nezabiral dalsi radek -
+            // widget na plose mi vertikalniho mista nazbyt.
+            PlasmaComponents.TextField {
+                id: titleField
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
-                elide: Text.ElideRight
-                text: root.currentNote
-                      ? root.currentNote.title + "  (" + (root.currentIndex + 1) + "/" + root.notes.length + ")"
-                      : ""
+                enabled: root.currentNote !== null
+                placeholderText: i18n("Název poznámky")
+                // Bez ramecku, aby to v panelu porad pusobilo jako popisek.
+                background: null
+
+                Component.onCompleted: {
+                    root.populating = true;
+                    text = root.lastTitle;
+                    root.populating = false;
+                    root.titleItem = this;
+                }
+                Component.onDestruction: {
+                    root.lastTitle = text;
+                    root.titleItem = null;
+                }
+
+                onTextChanged: {
+                    if (!root.populating && root.currentNote) {
+                        root.lastTitle = text;
+                        saveTimer.restart();
+                    }
+                }
+                // Enter = potvrdit a hned zapsat, at uzivatel neceka na debounce.
+                onAccepted: root.saveNow()
+                onActiveFocusChanged: {
+                    if (!activeFocus && saveTimer.running) {
+                        root.saveNow();
+                    }
+                }
+            }
+
+            PlasmaComponents.Label {
+                visible: root.notes.length > 0
+                opacity: 0.7
+                text: (root.currentIndex + 1) + "/" + root.notes.length
             }
 
             PlasmaComponents.ToolButton {

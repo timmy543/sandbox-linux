@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 
 from .storage import Note, NoteStore
 
-AUTOSAVE_DELAY_MS = 600
+AUTOSAVE_DELAY_MS = 1000
 NOTE_ID_ROLE = Qt.ItemDataRole.UserRole
 
 
@@ -252,7 +252,12 @@ class NotesWindow(QMainWindow):
             return
 
         title = self.title_edit.text().strip() or "Bez názvu"
-        self.store.update(self._current.id, title=title, body=self.body_edit.toPlainText())
+        note_id = self._current.id
+        self.store.update(note_id, title=title, body=self.body_edit.toPlainText())
+
+        # update() si nacte cerstvy soubor, takze self._current ukazuje na objekt
+        # z predchoziho nacteni. Bez tohohle by se dal cist zastaraly `updated`.
+        self._current = self.store.get(note_id) or self._current
 
         row = self._row_for(self._current.id)
         if row >= 0:

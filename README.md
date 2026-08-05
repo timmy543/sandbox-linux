@@ -181,8 +181,8 @@ které spouští přes `Plasma5Support` executable datasource:
 | `stickynotes-store delete <id>` | smaže poznámku |
 
 Data jdou jako **base64** (`Qt.btoa()` v QML), aby v shellu nevznikaly problémy
-s uvozovkami a diakritikou. Zápis je stejně jako v aplikaci debouncovaný (800 ms).
-Widget se navíc každých 15 s podívá, jestli soubor nezměnila aplikace — ale jen když
+s uvozovkami a diakritikou. Zápis je stejně jako v aplikaci debouncovaný (1 s).
+Widget se navíc každých 10 s podívá, jestli soubor nezměnila aplikace — ale jen když
 zrovna nepíšeš, aby ti nepodrazil rozepsaný text.
 
 ## Kam se instaluje
