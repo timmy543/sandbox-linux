@@ -94,12 +94,29 @@ jobs:
       - name: Uvodni stranka
         run: |
           cp packaging/notes-sandbox.repo site/
-          cat > site/index.html <<'HTML'
+
+          # GitHub Pages nedela vypis adresaru - /rpm/ by byla 404.
+          # Odkazy na balicky proto vypisujeme natvrdo.
+          LINKS=""
+          for f in site/rpm/*.rpm; do
+            n=$(basename "$f")
+            s=$(du -h "$f" | cut -f1)
+            LINKS="${LINKS}<li><a href=\"rpm/${n}\">${n}</a> <small>${s}</small></li>"
+          done
+
+          cat > site/index.html <<HTML
           <!doctype html><meta charset="utf-8"><title>notes-sandbox</title>
-          <h1>notes-sandbox — dnf repo</h1>
+          <style>body{font-family:system-ui,sans-serif;max-width:44rem;margin:3rem auto;padding:0 1rem;line-height:1.6}
+          pre{background:#f4f4f4;padding:1rem;border-radius:6px;overflow-x:auto}
+          @media(prefers-color-scheme:dark){body{background:#111;color:#eee}pre{background:#222}a{color:#6bf}}</style>
+          <h1>notes-sandbox</h1>
+          <p>dnf repozitář pro Fedoru / Nobaru.</p>
           <pre>sudo dnf config-manager --add-repo https://timmy543.github.io/sandbox-linux/notes-sandbox.repo
           sudo dnf install notes-sandbox</pre>
-          <p><a href="notes-sandbox.repo">notes-sandbox.repo</a> &middot; <a href="rpm/">balíčky</a></p>
+          <h2>Balíčky</h2>
+          <ul>${LINKS}</ul>
+          <p><a href="notes-sandbox.repo">notes-sandbox.repo</a> &middot;
+             <a href="https://github.com/timmy543/sandbox-linux">zdrojový kód</a></p>
           HTML
 
       - uses: actions/upload-artifact@v4
