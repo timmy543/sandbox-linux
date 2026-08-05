@@ -185,6 +185,27 @@ s uvozovkami a diakritikou. Zápis je stejně jako v aplikaci debouncovaný (800
 Widget se navíc každých 15 s podívá, jestli soubor nezměnila aplikace — ale jen když
 zrovna nepíšeš, aby ti nepodrazil rozepsaný text.
 
+## Kam se instaluje
+
+```
+/usr/bin/notes-sandbox              spustitelný soubor
+/usr/bin/notes-sandbox-store        helper pro widget
+/usr/share/notes-sandbox/notesapp/  Python modul
+/usr/share/applications/…           položka v nabídce
+/usr/share/icons/hicolor/…          ikona (SVG + PNG 48/64/128)
+/usr/share/plasma/plasmoids/…       widget
+```
+
+Modul **záměrně nejde** do `%{python3_sitelib}`. Ta cesta obsahuje verzi Pythonu
+(`/usr/lib/python3.14/site-packages`) a vyhodnotí se **při buildu** — balíček postavený
+na Fedoře 42 (Python 3.13) by na Fedoře 43 (Python 3.14) vlastní modul nenašel a spadl
+by na `ModuleNotFoundError`. Nobara je rolling distribuce, takže se pod tím bude Python
+měnit. Verzově nezávislá cesta + `sys.path.insert()` ve spouštěči znamená, že jeden
+balíček funguje napříč vydáními.
+
+PNG ikony jsou tam kvůli AppStreamu — `appstream-builder` samotné SVG neuzná a aplikace
+by se neobjevila v Discoveru.
+
 ## Identita aplikace
 
 App-id `io.github.timmy543.Notes` je zároveň názvem souborů v [data/](data/) a hodnotou

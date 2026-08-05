@@ -2,6 +2,15 @@
 %global plasmoidid  io.github.timmy543.notes
 %global srcname     notesapp
 
+# Modul zamerne NEJDE do %%{python3_sitelib}. Ta cesta obsahuje verzi Pythonu
+# (/usr/lib/python3.14/site-packages) a vyhodnoti se pri buildu - balicek
+# postaveny na Fedore 42 by pak na Fedore 43 nenasel vlastni modul.
+# Nobara je rolling, takze se pod tim Python bude menit. Verzove nezavisla
+# cesta znamena, ze jeden balicek funguje napric vydanimi.
+# Pozn.: nazev je tu napsany natvrdo - %%global se expanduje hned pri definici,
+# takze %%{name} jeste neni znamy (nastavuje ho az tag Name: nize).
+%global appdir      %{_datadir}/notes-sandbox
+
 Name:           notes-sandbox
 Version:        0.1.0
 Release:        1%{?dist}
@@ -43,24 +52,27 @@ s desktopovou aplikaci - obe strany ctou a zapisuji stejny notes.json.
 # Cisty Python, neni co kompilovat.
 
 %install
-# 1) Python modul
-install -d %{buildroot}%{python3_sitelib}/%{srcname}
-install -pm 0644 src/%{srcname}/*.py %{buildroot}%{python3_sitelib}/%{srcname}/
+# 1) Python modul (verzove nezavisla cesta, viz %%global appdir nahore)
+install -d %{buildroot}%{appdir}/%{srcname}
+install -pm 0644 src/%{srcname}/*.py %{buildroot}%{appdir}/%{srcname}/
+%py_byte_compile %{__python3} %{buildroot}%{appdir}
 
 # 2) Spustitelne soubory
 install -d %{buildroot}%{_bindir}
 
-cat > %{buildroot}%{_bindir}/%{name} <<'EOF'
+cat > %{buildroot}%{_bindir}/%{name} <<EOF
 #!/usr/bin/python3
 import sys
+sys.path.insert(0, "%{appdir}")
 from notesapp.main import main
 sys.exit(main())
 EOF
 
 # Pomocnik pro Plasma widget (QML neumi zapisovat soubory).
-cat > %{buildroot}%{_bindir}/%{name}-store <<'EOF'
+cat > %{buildroot}%{_bindir}/%{name}-store <<EOF
 #!/usr/bin/python3
 import sys
+sys.path.insert(0, "%{appdir}")
 from notesapp.cli import main
 sys.exit(main())
 EOF
@@ -95,7 +107,7 @@ appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/%{appid}.metai
 %doc README.md
 %{_bindir}/%{name}
 %{_bindir}/%{name}-store
-%{python3_sitelib}/%{srcname}/
+%{appdir}/
 %{_datadir}/applications/%{appid}.desktop
 %{_datadir}/icons/hicolor/scalable/apps/%{appid}.svg
 %{_datadir}/icons/hicolor/*/apps/%{appid}.png
