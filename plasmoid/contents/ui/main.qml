@@ -23,6 +23,9 @@ PlasmoidItem {
 
     property var notes: []
     property int currentIndex: 0
+    // Id poznamky, ktera ma byt vybrana az dobehne rozdelane ukladani.
+    // Odpovedi z helperu mohou dorazit mimo poradi, proto vzdy plati posledni cil.
+    property string pendingSelection: ""
     property bool populating: false
     property bool helperMissing: false
 
@@ -92,6 +95,7 @@ PlasmoidItem {
         }
         currentIndex = notes.length > 0 ? target : -1;
         editor.text = currentNote ? currentNote.body : "";
+        pendingSelection = currentNote ? currentNote.id : "";
         populating = false;
     }
 
@@ -130,21 +134,33 @@ PlasmoidItem {
             title: noteTitle !== undefined ? noteTitle : (currentNote ? currentNote.title : ""),
             body: noteBody !== undefined ? noteBody : editor.text
         };
-        const preserve = keepId !== undefined ? keepId : (currentNote ? currentNote.id : payload.id);
+        pendingSelection = keepId !== undefined
+                           ? keepId
+                           : (currentNote ? currentNote.id : payload.id);
         executable.run(helper + " save " + Qt.btoa(JSON.stringify(payload)), function (code, out) {
             if (code === 0) {
                 // Neprekreslujeme editor - uzivatel muze mezitim psat dal.
+                let fresh;
                 try {
-                    notes = JSON.parse(out).notes || [];
+                    fresh = JSON.parse(out).notes || [];
                 } catch (e) {
                     return;
                 }
-                for (let i = 0; i < notes.length; ++i) {
-                    if (notes[i].id === preserve) {
-                        currentIndex = i;
+                // Helper po ulozeni preskladá seznam podle `updated`, takze
+                // currentIndex musime dohledat znovu. Bereme aktualni cil, ne ten
+                // zachyceny pri odeslani - odpovedi mohou dorazit mimo poradi.
+                let target = -1;
+                for (let i = 0; i < fresh.length; ++i) {
+                    if (fresh[i].id === pendingSelection) {
+                        target = i;
                         break;
                     }
                 }
+                if (target < 0) {
+                    return;
+                }
+                notes = fresh;
+                currentIndex = target;
             }
         });
     }
@@ -172,6 +188,7 @@ PlasmoidItem {
         populating = true;
         editor.text = currentNote ? currentNote.body : "";
         populating = false;
+        pendingSelection = currentNote ? currentNote.id : "";
         rememberCurrent();
         if (oldNote) {
             saveNow(oldNote.id, oldNote.title, oldBody, currentNote ? currentNote.id : oldNote.id);

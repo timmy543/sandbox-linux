@@ -114,7 +114,7 @@ jobs:
           @media(prefers-color-scheme:dark){body{background:#111;color:#eee}pre{background:#222}a{color:#6bf}}</style>
           <h1>notes-sandbox</h1>
           <p>dnf repozitář pro Fedoru / Nobaru.</p>
-          <pre>sudo dnf config-manager --add-repo https://timmy543.github.io/sandbox-linux/notes-sandbox.repo
+          <pre>sudo dnf config-manager addrepo --from-repofile=https://timmy543.github.io/sandbox-linux/notes-sandbox.repo
           sudo dnf install notes-sandbox</pre>
           <h2>Balíčky</h2>
           <ul>${LINKS}</ul>
