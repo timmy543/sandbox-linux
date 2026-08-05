@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.timmy543.Notes</id>
+  <id>io.github.timmy543.StickyNotes</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
@@ -14,7 +14,7 @@
     <p xml:lang="cs">Minimalistická aplikace na poznámky v Qt6 s automatickým ukládáním.</p>
   </description>
 
-  <launchable type="desktop-id">io.github.timmy543.Notes.desktop</launchable>
+  <launchable type="desktop-id">io.github.timmy543.StickyNotes.desktop</launchable>
   <url type="homepage">https://github.com/timmy543/sandbox-linux</url>
   <url type="bugtracker">https://github.com/timmy543/sandbox-linux/issues</url>
 

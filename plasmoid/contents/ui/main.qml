@@ -2,7 +2,7 @@
  * Plasma 6 widget - poznamky na plose.
  *
  * QML neumi zapisovat soubory, takze veskere IO jde pres pomocne CLI
- * `notes-sandbox-store` spoustene Plasma5Support executable datasource.
+ * `stickynotes-store` spoustene Plasma5Support executable datasource.
  * Diky tomu widget sdili stejny notes.json s desktopovou aplikaci.
  */
 
@@ -19,7 +19,7 @@ import org.kde.kirigami as Kirigami
 PlasmoidItem {
     id: root
 
-    readonly property string helper: "notes-sandbox-store"
+    readonly property string helper: "stickynotes-store"
 
     property var notes: []
     property int currentIndex: 0
@@ -28,6 +28,17 @@ PlasmoidItem {
     property string pendingSelection: ""
     property bool populating: false
     property bool helperMissing: false
+
+    // fullRepresentation je Component, takze ma vlastni scope - id deklarovana
+    // uvnitr nej nejsou z rootu videt (jinak "ReferenceError: editor is not
+    // defined" pri kazdem pristupu). TextArea se sem proto zaregistruje sama.
+    // Muze byt null: full representation vznika az kdyz ji Plasma potrebuje.
+    property Item editorItem: null
+
+    // Telo prave zobrazene poznamky. Bere se z editoru, dokud existuje;
+    // po jeho zniceni (sbaleny widget) plati posledni znama hodnota.
+    readonly property string editorBody: editorItem ? editorItem.text : lastBody
+    property string lastBody: ""
 
     readonly property var currentNote:
         (currentIndex >= 0 && currentIndex < notes.length) ? notes[currentIndex] : null
@@ -67,9 +78,22 @@ PlasmoidItem {
         }
     }
 
+    // Zapis do editoru pres `populating`, aby se nespustil autosave. Editor
+    // nemusi existovat (sbaleny widget) - hodnotu si pak drzi lastBody a
+    // TextArea si ji vyzvedne pri svem vzniku.
+    function setEditorText(text) {
+        const before = populating;
+        populating = true;
+        lastBody = text;
+        if (editorItem) {
+            editorItem.text = text;
+        }
+        populating = before;
+    }
+
     function applyResult(exitCode, stdout, keepId) {
         if (exitCode !== 0) {
-            // 127 = prikaz nenalezen -> balicek notes-sandbox neni nainstalovany
+            // 127 = prikaz nenalezen -> balicek stickynotes-timmy543 neni nainstalovany
             helperMissing = (exitCode === 127);
             return;
         }
@@ -94,7 +118,7 @@ PlasmoidItem {
             }
         }
         currentIndex = notes.length > 0 ? target : -1;
-        editor.text = currentNote ? currentNote.body : "";
+        setEditorText(currentNote ? currentNote.body : "");
         pendingSelection = currentNote ? currentNote.id : "";
         populating = false;
     }
@@ -120,7 +144,9 @@ PlasmoidItem {
             }
             applyResult(code, out, created.note ? created.note.id : undefined);
             rememberCurrent();
-            editor.forceActiveFocus();
+            if (editorItem) {
+                editorItem.forceActiveFocus();
+            }
         });
     }
 
@@ -132,7 +158,7 @@ PlasmoidItem {
         const payload = {
             id: noteId || currentNote.id,
             title: noteTitle !== undefined ? noteTitle : (currentNote ? currentNote.title : ""),
-            body: noteBody !== undefined ? noteBody : editor.text
+            body: noteBody !== undefined ? noteBody : editorBody
         };
         pendingSelection = keepId !== undefined
                            ? keepId
@@ -181,13 +207,11 @@ PlasmoidItem {
             return;
         }
         const oldNote = currentNote;
-        const oldBody = editor.text;
+        const oldBody = editorBody;
         saveTimer.stop();
         const nextIndex = (currentIndex + delta + notes.length) % notes.length;
         currentIndex = nextIndex;
-        populating = true;
-        editor.text = currentNote ? currentNote.body : "";
-        populating = false;
+        setEditorText(currentNote ? currentNote.body : "");
         pendingSelection = currentNote ? currentNote.id : "";
         rememberCurrent();
         if (oldNote) {
@@ -212,7 +236,8 @@ PlasmoidItem {
         running: true
         repeat: true
         onTriggered: {
-            if (!editor.activeFocus && !saveTimer.running) {
+            const typing = root.editorItem ? root.editorItem.activeFocus : false;
+            if (!typing && !saveTimer.running) {
                 root.load();
             }
         }
@@ -281,8 +306,22 @@ PlasmoidItem {
                                 ? plasmoid.configuration.fontSize
                                 : Kirigami.Theme.defaultFont.pointSize
 
+                // Root na `editor` nedosahne (jiny scope), musime se prihlasit
+                // sami. Zaroven prevezmeme text nactený, nez editor existoval.
+                Component.onCompleted: {
+                    root.populating = true;
+                    text = root.lastBody;
+                    root.populating = false;
+                    root.editorItem = this;
+                }
+                Component.onDestruction: {
+                    root.lastBody = text;
+                    root.editorItem = null;
+                }
+
                 onTextChanged: {
                     if (!root.populating && root.currentNote) {
+                        root.lastBody = text;
                         saveTimer.restart();
                     }
                 }
@@ -299,8 +338,8 @@ PlasmoidItem {
             Layout.fillHeight: true
             visible: root.helperMissing
             iconName: "dialog-error"
-            text: i18n("Chybí notes-sandbox")
-            explanation: i18n("Nainstaluj balíček:  sudo dnf install notes-sandbox")
+            text: i18n("Chybí stickynotes-timmy543")
+            explanation: i18n("Nainstaluj balíček:  sudo dnf install stickynotes-timmy543")
         }
 
         PlasmaExtras.PlaceholderMessage {

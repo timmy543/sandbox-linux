@@ -1,4 +1,4 @@
-"""Ukladani poznamek do JSON souboru v ~/.local/share/notes-sandbox/."""
+"""Ukladani poznamek do JSON souboru v ~/.local/share/stickynotes-timmy543/."""
 
 from __future__ import annotations
 
@@ -12,12 +12,12 @@ from pathlib import Path
 
 
 def data_dir() -> Path:
-    """Linux: ~/.local/share/notes-sandbox, Windows: %LOCALAPPDATA%\\notes-sandbox."""
+    """Linux: ~/.local/share/stickynotes-timmy543, Windows: %LOCALAPPDATA%\\stickynotes-timmy543."""
     if sys.platform == "win32":
         base = os.environ.get("LOCALAPPDATA") or (Path.home() / "AppData" / "Local")
     else:
         base = os.environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share")
-    return Path(base) / "notes-sandbox"
+    return Path(base) / "stickynotes-timmy543"
 
 
 @dataclass

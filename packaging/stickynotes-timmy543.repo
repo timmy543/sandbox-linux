@@ -1,0 +1,11 @@
+# Zkopiruj do /etc/yum.repos.d/stickynotes-timmy543.repo
+# (nebo:  sudo dnf config-manager addrepo --from-repofile=https://timmy543.github.io/sandbox-linux/stickynotes-timmy543.repo)
+
+[stickynotes-timmy543]
+name=StickyNotes (timmy543)
+baseurl=https://timmy543.github.io/sandbox-linux/rpm/
+enabled=1
+repo_gpgcheck=0
+gpgcheck=0
+metadata_expire=300
+skip_if_unavailable=True

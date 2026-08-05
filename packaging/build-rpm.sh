@@ -2,7 +2,7 @@
 # Postavi RPM balicek lokalne. Spoustet z korene repozitare:  ./packaging/build-rpm.sh
 set -euo pipefail
 
-NAME="notes-sandbox"
+NAME="stickynotes-timmy543"
 VERSION="$(sed -n 's/^Version:[[:space:]]*//p' packaging/${NAME}.spec)"
 TOPDIR="$(rpm --eval '%{_topdir}')"
 

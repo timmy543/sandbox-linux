@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "notes-sandbox"
+name = "stickynotes-timmy543"
 version = "0.1.0"
 description = "Jednoducha aplikace na poznamky pro KDE Plasma (Qt6)"
 readme = "README.md"
@@ -13,8 +13,8 @@ authors = [{ name = "Jan Zeman" }]
 dependencies = ["PySide6>=6.5"]
 
 [project.scripts]
-notes-sandbox = "notesapp.main:main"
-notes-sandbox-store = "notesapp.cli:main"
+stickynotes = "stickynotes.main:main"
+stickynotes-store = "stickynotes.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

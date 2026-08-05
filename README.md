@@ -1,4 +1,4 @@
-# notes-sandbox
+# stickynotes-timmy543
 
 Jednoduchá aplikace na poznámky pro **Nobara / Fedora + KDE Plasma**.
 Python 3 + Qt6 (PySide6), automatické ukládání, RPM balíček distribuovaný přes GitHub Pages.
@@ -9,14 +9,14 @@ Sandbox projekt na vyzkoušení celého řetězce: *kód → RPM → vlastní dn
 
 | Vrstva | Soubor |
 |---|---|
-| Ukládání dat (nezávislé na GUI) | [src/notesapp/storage.py](src/notesapp/storage.py) |
-| Okno a UI logika | [src/notesapp/window.py](src/notesapp/window.py) |
-| Start aplikace | [src/notesapp/main.py](src/notesapp/main.py) |
-| RPM předpis | [packaging/notes-sandbox.spec](packaging/notes-sandbox.spec) |
+| Ukládání dat (nezávislé na GUI) | [src/stickynotes/storage.py](src/stickynotes/storage.py) |
+| Okno a UI logika | [src/stickynotes/window.py](src/stickynotes/window.py) |
+| Start aplikace | [src/stickynotes/main.py](src/stickynotes/main.py) |
+| RPM předpis | [packaging/stickynotes-timmy543.spec](packaging/stickynotes-timmy543.spec) |
 | Lokální build | [packaging/build-rpm.sh](packaging/build-rpm.sh) |
 | CI + publikace repa | [.github/workflows/rpm.yml](.github/workflows/rpm.yml) |
 
-Poznámky se ukládají do `~/.local/share/notes-sandbox/notes.json`.
+Poznámky se ukládají do `~/.local/share/stickynotes-timmy543/notes.json`.
 
 ## 1. Spuštění z kódu (vývoj)
 
@@ -24,7 +24,7 @@ Poznámky se ukládají do `~/.local/share/notes-sandbox/notes.json`.
 sudo dnf install python3-pyside6
 git clone https://github.com/timmy543/sandbox-linux.git
 cd sandbox-linux
-PYTHONPATH=src python3 -m notesapp.main
+PYTHONPATH=src python3 -m stickynotes.main
 ```
 
 ### Vývoj na Windows
@@ -37,14 +37,14 @@ windowsí vzhled místo Plasmy). Balení do RPM samozřejmě jen na Linuxu.
 ```
 
 Skript si při prvním spuštění sám vytvoří `.venv` a nainstaluje PySide6.
-Data se ukládají do `%LOCALAPPDATA%\notes-sandbox\notes.json`.
+Data se ukládají do `%LOCALAPPDATA%\stickynotes-timmy543\notes.json`.
 
 ## 2. Postavení RPM lokálně
 
 ```bash
 sudo dnf install rpm-build rpmdevtools desktop-file-utils libappstream-glib
 ./packaging/build-rpm.sh
-sudo dnf install ~/rpmbuild/RPMS/noarch/notes-sandbox-0.1.0-1*.noarch.rpm
+sudo dnf install ~/rpmbuild/RPMS/noarch/stickynotes-timmy543-0.1.0-1*.noarch.rpm
 ```
 
 Pak se aplikace objeví v nabídce Plasmy jako **Poznámky**.
@@ -52,14 +52,14 @@ Pak se aplikace objeví v nabídce Plasmy jako **Poznámky**.
 ### Odinstalace
 
 ```bash
-sudo dnf remove notes-sandbox            # odejde i widget (má na aplikaci Requires)
-sudo dnf remove notes-sandbox-plasmoid   # jen widget, aplikace zůstane
+sudo dnf remove stickynotes-timmy543            # odejde i widget (má na aplikaci Requires)
+sudo dnf remove stickynotes-timmy543-plasmoid   # jen widget, aplikace zůstane
 ```
 
 Dvě věci, které odinstalace neudělá:
 
-- **Poznámky nesmaže** — `~/.local/share/notes-sandbox/` je v domovském adresáři,
-  RPM databáze o něm neví. Smazat ručně: `rm -rf ~/.local/share/notes-sandbox`.
+- **Poznámky nesmaže** — `~/.local/share/stickynotes-timmy543/` je v domovském adresáři,
+  RPM databáze o něm neví. Smazat ručně: `rm -rf ~/.local/share/stickynotes-timmy543`.
 - **Widget nesundá z plochy.** Pokud ho tam necháš viset, Plasma po odinstalaci ukáže
   chybové políčko „widget není k dispozici", protože v konfiguraci plochy zůstal zápis.
   Nejdřív ho sundej z plochy (pravý klik → Odebrat), pak odinstaluj.
@@ -76,8 +76,8 @@ Workflow po každém pushi do `main`:
 Na Nobaře pak stačí:
 
 ```bash
-sudo dnf config-manager addrepo --from-repofile=https://timmy543.github.io/sandbox-linux/notes-sandbox.repo
-sudo dnf install notes-sandbox
+sudo dnf config-manager addrepo --from-repofile=https://timmy543.github.io/sandbox-linux/stickynotes-timmy543.repo
+sudo dnf install stickynotes-timmy543
 ```
 
 Nová verze = zvednout `Version:` ve spec souboru + `version` v `pyproject.toml`, pushnout,
@@ -89,28 +89,28 @@ Jeden spec soubor vyrobí **dva balíčky**:
 
 | Balíček | Obsah | Kde se projeví |
 |---|---|---|
-| `notes-sandbox` | aplikace + `notes-sandbox-store` | ikona **Poznámky** v nabídce Plasmy |
-| `notes-sandbox-plasmoid` | QML widget | *Přidat widgety* → **Poznámky** |
+| `stickynotes-timmy543` | aplikace + `stickynotes-store` | ikona **Poznámky** v nabídce Plasmy |
+| `stickynotes-timmy543-plasmoid` | QML widget | *Přidat widgety* → **Poznámky** |
 
 Widget nemá `.desktop` soubor, takže se v nabídce aplikací **neobjeví** — je jen v seznamu
 widgetů. V nabídce tedy uvidíš jednu položku, i když jsou balíčky dva.
 
-Ve spec souboru je `Supplements: (notes-sandbox and plasma-workspace)`, což znamená:
-na systému s Plasmou si `dnf install notes-sandbox` přitáhne widget automaticky.
-Na GNOME nebo serveru ne. Nechceš-li ho, `dnf install notes-sandbox --setopt=install_weak_deps=False`.
+Ve spec souboru je `Supplements: (stickynotes-timmy543 and plasma-workspace)`, což znamená:
+na systému s Plasmou si `dnf install stickynotes-timmy543` přitáhne widget automaticky.
+Na GNOME nebo serveru ne. Nechceš-li ho, `dnf install stickynotes-timmy543 --setopt=install_weak_deps=False`.
 
 ### Discover vs. dnf
 
 Workflow generuje do metadat repozitáře dvě věci:
 
 - **`createrepo_c`** — bez toho `dnf` repozitář vůbec nenačte.
-- **`appstream-builder`** — katalog aplikací. Bez něj `dnf install notes-sandbox` funguje,
+- **`appstream-builder`** — katalog aplikací. Bez něj `dnf install stickynotes-timmy543` funguje,
   ale v **Discoveru** (grafický správce balíčků) by se aplikace neukázala mezi aplikacemi,
   protože Discover čte právě AppStream katalog, ne seznam balíčků. Proto se do repodata
   vkládá `modifyrepo_c --mdtype=appstream`.
 
 Zdroj těch údajů (název, ikona, popis, screenshoty) je
-[data/io.github.timmy543.Notes.metainfo.xml](data/io.github.timmy543.Notes.metainfo.xml).
+[data/io.github.timmy543.StickyNotes.metainfo.xml](data/io.github.timmy543.StickyNotes.metainfo.xml).
 
 > Repo je bez GPG podpisu (`gpgcheck=0`) — pro sandbox v pohodě. Pro veřejnou distribuci
 > se klíč vygeneruje přes `gpg --gen-key`, balíčky se podepíšou `rpmsign --addsign`
@@ -122,8 +122,8 @@ Poznámky jsou v jednom JSON souboru, žádná databáze:
 
 | Systém | Cesta |
 |---|---|
-| Linux | `~/.local/share/notes-sandbox/notes.json` (respektuje `XDG_DATA_HOME`) |
-| Windows | `%LOCALAPPDATA%\notes-sandbox\notes.json` |
+| Linux | `~/.local/share/stickynotes-timmy543/notes.json` (respektuje `XDG_DATA_HOME`) |
+| Windows | `%LOCALAPPDATA%\stickynotes-timmy543\notes.json` |
 
 Formát:
 
@@ -163,22 +163,22 @@ Instalace pro vývoj (bez RPM):
 ```
 
 Pak pravý klik na plochu → **Přidat widgety** → *Poznámky* → přetáhnout na plochu.
-Z RPM se instaluje podbalíčkem `sudo dnf install notes-sandbox-plasmoid`.
+Z RPM se instaluje podbalíčkem `sudo dnf install stickynotes-timmy543-plasmoid`.
 
 ### Proč QML a ne Python
 
 Plasma umí načíst jen QML balíček — cizí proces jako svou součást spustit nedokáže,
 a Python bindingy pro plasmoidy skončily s Plasma 4. QML navíc neumí zapisovat soubory.
 
-Widget proto veškeré IO deleguje na CLI [`notes-sandbox-store`](src/notesapp/cli.py),
+Widget proto veškeré IO deleguje na CLI [`stickynotes-store`](src/stickynotes/cli.py),
 které spouští přes `Plasma5Support` executable datasource:
 
 | Příkaz | Co dělá |
 |---|---|
-| `notes-sandbox-store load` | vypíše všechny poznámky jako JSON |
-| `notes-sandbox-store new` | vytvoří poznámku |
-| `notes-sandbox-store save <base64>` | uloží `{id,title,body}` |
-| `notes-sandbox-store delete <id>` | smaže poznámku |
+| `stickynotes-store load` | vypíše všechny poznámky jako JSON |
+| `stickynotes-store new` | vytvoří poznámku |
+| `stickynotes-store save <base64>` | uloží `{id,title,body}` |
+| `stickynotes-store delete <id>` | smaže poznámku |
 
 Data jdou jako **base64** (`Qt.btoa()` v QML), aby v shellu nevznikaly problémy
 s uvozovkami a diakritikou. Zápis je stejně jako v aplikaci debouncovaný (800 ms).
@@ -188,9 +188,9 @@ zrovna nepíšeš, aby ti nepodrazil rozepsaný text.
 ## Kam se instaluje
 
 ```
-/usr/bin/notes-sandbox              spustitelný soubor
-/usr/bin/notes-sandbox-store        helper pro widget
-/usr/share/notes-sandbox/notesapp/  Python modul
+/usr/bin/stickynotes                        spustitelný soubor
+/usr/bin/stickynotes-store        helper pro widget
+/usr/share/stickynotes-timmy543/stickynotes/  Python modul
 /usr/share/applications/…           položka v nabídce
 /usr/share/icons/hicolor/…          ikona (SVG + PNG 48/64/128)
 /usr/share/plasma/plasmoids/…       widget
@@ -208,7 +208,7 @@ by se neobjevila v Discoveru.
 
 ## Identita aplikace
 
-App-id `io.github.timmy543.Notes` je zároveň názvem souborů v [data/](data/) a hodnotou
+App-id `io.github.timmy543.StickyNotes` je zároveň názvem souborů v [data/](data/) a hodnotou
 `Icon=` v `.desktop`. Když ho měníš, přejmenuj i ty soubory — jinak KDE nespáruje
 ikonu s oknem a v panelu bude šedý čtvereček.
 

@@ -5,10 +5,10 @@ Plasma5Support executable datasource. Data chodi jako base64, aby se
 nemusely resit uvozovky v shellu.
 
 Pouziti:
-    notes-sandbox-store load                -> vypise JSON se vsemi poznamkami
-    notes-sandbox-store save <base64-json>  -> ulozi jednu poznamku {id,title,body}
-    notes-sandbox-store new                 -> vytvori poznamku, vypise ji
-    notes-sandbox-store delete <id>         -> smaze poznamku
+    stickynotes-store load                -> vypise JSON se vsemi poznamkami
+    stickynotes-store save <base64-json>  -> ulozi jednu poznamku {id,title,body}
+    stickynotes-store new                 -> vytvori poznamku, vypise ji
+    stickynotes-store delete <id>         -> smaze poznamku
 """
 
 from __future__ import annotations

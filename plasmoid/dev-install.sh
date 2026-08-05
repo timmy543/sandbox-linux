@@ -4,7 +4,7 @@
 #   ./plasmoid/dev-install.sh remove   odinstaluje
 set -euo pipefail
 
-ID="io.github.timmy543.notes"
+ID="io.github.timmy543.stickynotes"
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ "${1:-}" == "remove" ]]; then

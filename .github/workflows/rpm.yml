@@ -39,7 +39,7 @@ jobs:
 
       # Cte BuildRequires primo ze specu, takze se seznam nemuze rozejit.
       - name: Build zavislosti ze specu
-        run: dnf -y builddep --setopt=install_weak_deps=False packaging/notes-sandbox.spec
+        run: dnf -y builddep --setopt=install_weak_deps=False packaging/stickynotes-timmy543.spec
 
       - name: Build RPM
         # Cislo behu roste monotonne, takze kazdy build z main je pro dnf novejsi
@@ -68,16 +68,16 @@ jobs:
             --packages-dir=site/rpm \
             --temp-dir=$(mktemp -d) \
             --output-dir=appstream \
-            --origin=notes-sandbox \
-            --basename=notes-sandbox \
+            --origin=stickynotes-timmy543 \
+            --basename=stickynotes-timmy543 \
             --include-failed \
             --min-icon-size=32
           # Vlozi katalog do repodata jako typ 'appstream'.
           modifyrepo_c --mdtype=appstream \
-            appstream/notes-sandbox.xml.gz site/rpm/repodata/
-          if [ -f appstream/notes-sandbox-icons.tar.gz ]; then
+            appstream/stickynotes-timmy543.xml.gz site/rpm/repodata/
+          if [ -f appstream/stickynotes-timmy543-icons.tar.gz ]; then
             modifyrepo_c --mdtype=appstream-icons \
-              appstream/notes-sandbox-icons.tar.gz site/rpm/repodata/
+              appstream/stickynotes-timmy543-icons.tar.gz site/rpm/repodata/
           fi
 
       # Prazdny katalog = aplikace se neukaze v Discoveru. Radeji hlasit hned,
@@ -85,23 +85,23 @@ jobs:
       - name: Kontrola AppStream katalogu
         run: |
           echo "--- zarazeno do katalogu ---"
-          zcat appstream/notes-sandbox.xml.gz | grep -c '<component' || true
-          zcat appstream/notes-sandbox.xml.gz | grep -o '<id>[^<]*</id>' || true
+          zcat appstream/stickynotes-timmy543.xml.gz | grep -c '<component' || true
+          zcat appstream/stickynotes-timmy543.xml.gz | grep -o '<id>[^<]*</id>' || true
 
-          if [ -s appstream/notes-sandbox-failed.xml.gz ] && \
-             zcat appstream/notes-sandbox-failed.xml.gz | grep -q '<component'; then
+          if [ -s appstream/stickynotes-timmy543-failed.xml.gz ] && \
+             zcat appstream/stickynotes-timmy543-failed.xml.gz | grep -q '<component'; then
             echo "--- ODMITNUTO (i s duvodem) ---"
-            zcat appstream/notes-sandbox-failed.xml.gz
+            zcat appstream/stickynotes-timmy543-failed.xml.gz
           fi
 
-          if ! zcat appstream/notes-sandbox.xml.gz | grep -q '<component'; then
+          if ! zcat appstream/stickynotes-timmy543.xml.gz | grep -q '<component'; then
             echo "::error::AppStream katalog je prazdny - Discover aplikaci neukaze"
             exit 1
           fi
 
       - name: Uvodni stranka
         run: |
-          cp packaging/notes-sandbox.repo site/
+          cp packaging/stickynotes-timmy543.repo site/
 
           # GitHub Pages nedela vypis adresaru - /rpm/ by byla 404.
           # Odkazy na balicky proto vypisujeme natvrdo.
@@ -113,17 +113,17 @@ jobs:
           done
 
           cat > site/index.html <<HTML
-          <!doctype html><meta charset="utf-8"><title>notes-sandbox</title>
+          <!doctype html><meta charset="utf-8"><title>stickynotes-timmy543</title>
           <style>body{font-family:system-ui,sans-serif;max-width:44rem;margin:3rem auto;padding:0 1rem;line-height:1.6}
           pre{background:#f4f4f4;padding:1rem;border-radius:6px;overflow-x:auto}
           @media(prefers-color-scheme:dark){body{background:#111;color:#eee}pre{background:#222}a{color:#6bf}}</style>
-          <h1>notes-sandbox</h1>
+          <h1>stickynotes-timmy543</h1>
           <p>dnf repozitář pro Fedoru / Nobaru.</p>
-          <pre>sudo dnf config-manager addrepo --from-repofile=https://timmy543.github.io/sandbox-linux/notes-sandbox.repo
-          sudo dnf install notes-sandbox</pre>
+          <pre>sudo dnf config-manager addrepo --from-repofile=https://timmy543.github.io/sandbox-linux/stickynotes-timmy543.repo
+          sudo dnf install stickynotes-timmy543</pre>
           <h2>Balíčky</h2>
           <ul>${LINKS}</ul>
-          <p><a href="notes-sandbox.repo">notes-sandbox.repo</a> &middot;
+          <p><a href="stickynotes-timmy543.repo">stickynotes-timmy543.repo</a> &middot;
              <a href="https://github.com/timmy543/sandbox-linux">zdrojový kód</a></p>
           HTML
 

@@ -1,7 +1,7 @@
 {
     "KPackageStructure": "Plasma/Applet",
     "KPlugin": {
-        "Id": "io.github.timmy543.notes",
+        "Id": "io.github.timmy543.stickynotes",
         "Name": "Notes",
         "Name[cs]": "Poznámky",
         "Description": "Sticky notes on your desktop",

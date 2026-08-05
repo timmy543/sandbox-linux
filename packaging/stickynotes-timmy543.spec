@@ -1,6 +1,12 @@
-%global appid       io.github.timmy543.Notes
-%global plasmoidid  io.github.timmy543.notes
-%global srcname     notesapp
+%global appid       io.github.timmy543.StickyNotes
+%global plasmoidid  io.github.timmy543.stickynotes
+%global srcname     stickynotes
+
+# Nazvy prikazu jsou zamerne kratsi nez %%{name}: v balicku je "-timmy543" jen
+# kvuli unikatnosti v repu, uzivatel ho v terminalu psat nemusi. Helper musi
+# presne sedet s konstantou `helper` v plasmoid/contents/ui/main.qml.
+%global cmd         stickynotes
+%global storecmd    %{cmd}-store
 
 # Modul zamerne NEJDE do %%{python3_sitelib}. Ta cesta obsahuje verzi Pythonu
 # (/usr/lib/python3.14/site-packages) a vyhodnoti se pri buildu - balicek
@@ -9,9 +15,9 @@
 # cesta znamena, ze jeden balicek funguje napric vydanimi.
 # Pozn.: nazev je tu napsany natvrdo - %%global se expanduje hned pri definici,
 # takze %%{name} jeste neni znamy (nastavuje ho az tag Name: nize).
-%global appdir      %{_datadir}/notes-sandbox
+%global appdir      %{_datadir}/stickynotes-timmy543
 
-Name:           notes-sandbox
+Name:           stickynotes-timmy543
 Version:        0.1.0
 # rel_suffix dodava CI (cislo behu workflow), aby kazdy build z main mel vyssi
 # NEVR nez ten predchozi - jinak dnf upgrade hlasi "Neni co delat" i kdyz je
@@ -36,7 +42,7 @@ Requires:       python3-pyside6
 
 %description
 Minimalisticka aplikace na poznamky napsana v Pythonu s Qt6 (PySide6).
-Poznamky se ukladaji automaticky do ~/.local/share/notes-sandbox/notes.json.
+Poznamky se ukladaji automaticky do ~/.local/share/stickynotes-timmy543/notes.json.
 
 %package plasmoid
 Summary:        Widget na plochu pro KDE Plasma
@@ -63,24 +69,24 @@ install -pm 0644 src/%{srcname}/*.py %{buildroot}%{appdir}/%{srcname}/
 # 2) Spustitelne soubory
 install -d %{buildroot}%{_bindir}
 
-cat > %{buildroot}%{_bindir}/%{name} <<EOF
+cat > %{buildroot}%{_bindir}/%{cmd} <<EOF
 #!/usr/bin/python3
 import sys
 sys.path.insert(0, "%{appdir}")
-from notesapp.main import main
+from stickynotes.main import main
 sys.exit(main())
 EOF
 
 # Pomocnik pro Plasma widget (QML neumi zapisovat soubory).
-cat > %{buildroot}%{_bindir}/%{name}-store <<EOF
+cat > %{buildroot}%{_bindir}/%{storecmd} <<EOF
 #!/usr/bin/python3
 import sys
 sys.path.insert(0, "%{appdir}")
-from notesapp.cli import main
+from stickynotes.cli import main
 sys.exit(main())
 EOF
 
-chmod 0755 %{buildroot}%{_bindir}/%{name} %{buildroot}%{_bindir}/%{name}-store
+chmod 0755 %{buildroot}%{_bindir}/%{cmd} %{buildroot}%{_bindir}/%{storecmd}
 
 # 3) Integrace do desktopu
 install -Dpm 0644 data/%{appid}.desktop   %{buildroot}%{_datadir}/applications/%{appid}.desktop
@@ -108,8 +114,8 @@ appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/%{appid}.metai
 %files
 %license LICENSE
 %doc README.md
-%{_bindir}/%{name}
-%{_bindir}/%{name}-store
+%{_bindir}/%{cmd}
+%{_bindir}/%{storecmd}
 %{appdir}/
 %{_datadir}/applications/%{appid}.desktop
 %{_datadir}/icons/hicolor/scalable/apps/%{appid}.svg

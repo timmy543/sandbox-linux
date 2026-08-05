@@ -11,4 +11,4 @@ if (-not (Test-Path $python)) {
 }
 
 $env:PYTHONPATH = Join-Path $root "src"
-Start-Process -FilePath $python -ArgumentList "-m", "notesapp.main" -WorkingDirectory $root
+Start-Process -FilePath $python -ArgumentList "-m", "stickynotes.main" -WorkingDirectory $root
