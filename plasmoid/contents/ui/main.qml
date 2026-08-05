@@ -155,6 +155,15 @@ PlasmoidItem {
         populating = false;
     }
 
+    function noteById(id) {
+        for (let i = 0; i < notes.length; ++i) {
+            if (notes[i].id === id) {
+                return notes[i];
+            }
+        }
+        return null;
+    }
+
     function load() {
         executable.run(helper + " load", function (code, out) {
             applyResult(code, out, plasmoid.configuration.noteId);
@@ -203,6 +212,13 @@ PlasmoidItem {
             title: noteTitle !== undefined ? noteTitle : editorTitle,
             body: noteBody !== undefined ? noteBody : editorBody
         };
+        // Stav, ze ktereho tahle uprava vychazi (posledni nacteni ze souboru).
+        // Helper podle nej pozna, jestli do stejneho pole mezitim nezapsala
+        // aplikace - pak nas zapis toho pole zahodi misto prepsani.
+        const base = noteById(payload.id);
+        if (base) {
+            payload.base = { title: base.title, body: base.body };
+        }
         pendingSelection = keepId !== undefined
                            ? keepId
                            : (currentNote ? currentNote.id : payload.id);

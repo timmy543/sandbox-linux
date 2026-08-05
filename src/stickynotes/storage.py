@@ -102,19 +102,49 @@ class NoteStore:
     def get(self, note_id: str) -> Note | None:
         return next((n for n in self.notes if n.id == note_id), None)
 
-    def update(self, note_id: str, *, title: str | None = None, body: str | None = None) -> None:
+    def update(
+        self,
+        note_id: str,
+        *,
+        title: str | None = None,
+        body: str | None = None,
+        base_title: str | None = None,
+        base_body: str | None = None,
+    ) -> bool:
+        """Ulozi zmenu jedne poznamky. Vraci True, pokud se neco opravdu zmenilo.
+
+        `base_*` je hodnota, ze ktere volajici vychazel. Kdyz se ulozena hodnota
+        od nej lisi, znamena to, ze do stejneho pole mezitim zapsala druha strana
+        (aplikace vs. widget) - takovou zmenu nepresepisujeme. Bez `base_*` se
+        zapisuje bezpodminecne (chovani pro volajici, kteri konflikt neresi).
+        """
         # Read-modify-write: nacteme cerstvy stav z disku a zmenime jen tuhle
         # jednu poznamku. Zapis pak nesmaze, co mezitim ulozila druha strana.
         self.reload_if_changed()
         note = self.get(note_id)
         if note is None:
-            return
-        if title is not None:
-            note.title = title
-        if body is not None:
-            note.body = body
+            return False
+
+        changed = False
+        for new, base, field in ((title, base_title, "title"), (body, base_body, "body")):
+            if new is None:
+                continue
+            current = getattr(note, field)
+            if new == current:
+                continue  # uz to tam je
+            if base is not None and current != base:
+                continue  # zmenil to nekdo jiny - nechavame jeho verzi
+            setattr(note, field, new)
+            changed = True
+
+        # Zadna zmena = zadny zapis. Jinak by se zbytecne bumpl `updated`
+        # a probudil watcher na druhe strane.
+        if not changed:
+            return False
+
         note.updated = time.time()
         self.save()
+        return True
 
     def delete(self, note_id: str) -> None:
         self.reload_if_changed()

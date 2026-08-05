@@ -58,7 +58,16 @@ def main(argv: list[str] | None = None) -> int:
         if not note_id or store.get(note_id) is None:
             print("neznama poznamka", file=sys.stderr)
             return 3
-        store.update(note_id, title=raw.get("title"), body=raw.get("body"))
+        # `base` = stav, ze ktereho widget vychazel. Diky nemu update() pozna,
+        # jestli do stejneho pole mezitim nezapsala desktopova aplikace.
+        base = raw.get("base") or {}
+        store.update(
+            note_id,
+            title=raw.get("title"),
+            body=raw.get("body"),
+            base_title=base.get("title"),
+            base_body=base.get("body"),
+        )
         _dump(_all_notes(store))
         return 0
 
