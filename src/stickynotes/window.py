@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QFileSystemWatcher, Qt, QTimer
 from PySide6.QtGui import QAction, QGuiApplication, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -49,6 +49,46 @@ class NotesWindow(QMainWindow):
         self.setStatusBar(QStatusBar())
 
         self.refresh_list()
+        self._setup_watcher()
+
+    # -------------------------------------------------- Sdileni s widgetem --
+
+    def _setup_watcher(self) -> None:
+        """Hlida notes.json, aby se zmeny z Plasma widgetu projevily hned."""
+        self._watcher = QFileSystemWatcher(self)
+        # Hlida se i adresar: soubor se uklada atomicky pres rename, cimz se
+        # zmeni inode a watcher by o puvodni cestu prisel.
+        self.store.path.parent.mkdir(parents=True, exist_ok=True)
+        self._watcher.addPath(str(self.store.path.parent))
+        if self.store.path.exists():
+            self._watcher.addPath(str(self.store.path))
+
+        # Debounce: rename generuje nekolik udalosti za sebou.
+        self._reload_timer = QTimer(self)
+        self._reload_timer.setSingleShot(True)
+        self._reload_timer.setInterval(300)
+        self._reload_timer.timeout.connect(self._reload_from_disk)
+
+        self._watcher.fileChanged.connect(lambda _p: self._reload_timer.start())
+        self._watcher.directoryChanged.connect(lambda _p: self._reload_timer.start())
+
+    def _reload_from_disk(self) -> None:
+        # Po atomickem prepsani uz watcher starou cestu nesleduje - vratit.
+        path = str(self.store.path)
+        if self.store.path.exists() and path not in self._watcher.files():
+            self._watcher.addPath(path)
+
+        # Rozepsany text ma prednost: dokud bezi autosave, cizi zmenu ignorujeme,
+        # jinak by uzivateli zmizelo pod rukama to, co prave pise.
+        if self._save_timer.isActive():
+            return
+        if not self.store.reload_if_changed():
+            return
+
+        keep = self._current.id if self._current else None
+        self._current = self.store.get(keep) if keep else None
+        self.refresh_list(select_id=keep)
+        self.statusBar().showMessage("Načteno ze souboru (změnil widget)", 2000)
 
     # ------------------------------------------------------------------ UI --
 

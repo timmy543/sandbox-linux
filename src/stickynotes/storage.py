@@ -43,9 +43,29 @@ class NoteStore:
     def __init__(self, path: Path | None = None) -> None:
         self.path = path or (data_dir() / "notes.json")
         self.notes: list[Note] = []
+        self._mtime: int | None = None
         self.load()
 
+    def _stat_mtime(self) -> int | None:
+        try:
+            return self.path.stat().st_mtime_ns
+        except OSError:
+            return None
+
+    def reload_if_changed(self) -> bool:
+        """Znovu nacte soubor, pokud ho mezitim prepsal nekdo jiny.
+
+        Aplikace i widget bezi jako samostatne procesy nad jednim souborem.
+        Bez tohohle by kazdy zapis vysypal na disk celou vlastni (zastaralou)
+        kopii seznamu a prepsal tak zmeny toho druheho.
+        """
+        if self._mtime is not None and self._stat_mtime() == self._mtime:
+            return False
+        self.load()
+        return True
+
     def load(self) -> None:
+        self._mtime = self._stat_mtime()
         if not self.path.exists():
             self.notes = []
             return
@@ -58,8 +78,11 @@ class NoteStore:
             self.path.replace(self.path.with_suffix(".json.broken"))
             self.notes = []
             return
+        # Zadne razeni: poradi v souboru = poradi vzniku, prvni vytvorena je
+        # prvni. Musi byt stabilni, protoze widget listuje podle indexu a
+        # ukazuje "x/y" - drivejsi razeni podle `updated` seznam preskladalo
+        # pokazde, co se neco ulozilo, a cislovani skakalo pod rukama.
         self.notes = [Note.from_dict(item) for item in raw.get("notes", [])]
-        self._sort()
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -67,13 +90,12 @@ class NoteStore:
         payload = {"version": 1, "notes": [asdict(n) for n in self.notes]}
         tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         tmp.replace(self.path)
-
-    def _sort(self) -> None:
-        self.notes.sort(key=lambda n: n.updated, reverse=True)
+        self._mtime = self._stat_mtime()
 
     def add(self) -> Note:
+        self.reload_if_changed()
         note = Note()
-        self.notes.insert(0, note)
+        self.notes.append(note)  # na konec = poradi vzniku
         self.save()
         return note
 
@@ -81,6 +103,9 @@ class NoteStore:
         return next((n for n in self.notes if n.id == note_id), None)
 
     def update(self, note_id: str, *, title: str | None = None, body: str | None = None) -> None:
+        # Read-modify-write: nacteme cerstvy stav z disku a zmenime jen tuhle
+        # jednu poznamku. Zapis pak nesmaze, co mezitim ulozila druha strana.
+        self.reload_if_changed()
         note = self.get(note_id)
         if note is None:
             return
@@ -92,5 +117,6 @@ class NoteStore:
         self.save()
 
     def delete(self, note_id: str) -> None:
+        self.reload_if_changed()
         self.notes = [n for n in self.notes if n.id != note_id]
         self.save()
