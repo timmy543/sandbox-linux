@@ -1,3 +1,17 @@
+# Fedora bere SOURCE_DATE_EPOCH z data v changelogu a tim datem prepise mtime
+# vsech souboru v balicku. Datum v changelogu se ale mezi buildy nemeni, takze
+# 1.12, 1.13 i 1.14 dostaly uplne stejny cas.
+#
+# Qt si zkompilovanou QML uklada do ~/.cache/plasmashell/qmlcache/ a platnost
+# overuje prave podle mtime zdrojaku. Nezmeneny cas => cache se povazuje za
+# platnou => plasmashell donekonecna spousti prvni verzi, kterou zkompiloval,
+# i kdyz dnf soubory radne vymenil.
+#
+# Proto necháváme mtime na case buildu. Reprodukovatelnost buildu tim padne,
+# ale ta je nam k nicemu, kdyz se aktualizace neprojevi.
+%global source_date_epoch_from_changelog 0
+%global clamp_mtime_to_source_date_epoch 0
+
 %global appid       io.github.timmy543.StickyNotes
 %global plasmoidid  io.github.timmy543.stickynotes
 %global srcname     stickynotes
