@@ -346,8 +346,11 @@ PlasmoidItem {
                 horizontalAlignment: Text.AlignHCenter
                 enabled: root.currentNote !== null
                 placeholderText: i18n("Název poznámky")
-                // Bez ramecku, aby to v panelu porad pusobilo jako popisek.
-                background: null
+                // POZOR: nedavat sem `background: null`. Padding TextFieldu se
+                // pocita z okraju pozadi (viz PlasmaComponents/TextField.qml),
+                // takze bez nej spadne vyska z 30 na 17 px. Vznikne tenky
+                // prouzek bez ramecku, ktery vypada jako popisek a klikani se
+                // z poloviny mine - pole pak nikdy nedostane focus.
 
                 Component.onCompleted: {
                     root.populating = true;
